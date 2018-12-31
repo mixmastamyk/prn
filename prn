@@ -17,23 +17,28 @@ from os.path import exists, join, split, splitext
 from console import fx
 
 
-__version__ = '0.80'
-HEADER = '\nMike-rosoft™ Power Rename%s:\n'
-_column_width = 40  # default column width
-sep = str(fx.dim('│'))
-acronymdb = [
-    'AB', 'ABBA', 'ABC', 'ACDC', 'ATB', 'BIG', 'BBC', 'BPM', 'CCCP', 'DJ',
-    'DJ\'s', 'DJs', 'DMC', 'EFX', 'EMF', 'INXS', 'KC', 'KLF', 'KWS', 'LL',
-    'MC', 'MC\'s', 'MCs', 'MTV', 'NWA', 'OMC', 'PM', 'PYT', 'REM', 'SOS',
-    'TLC', 'UB40', 'US3', 'USA', 'USSR', 'VIP', 'XTC', 'YMCA', 'ZZ'
-]
-epilog = '''Example:
+__version__ = '0.81a1'
+_column_width = 40
+# https://stackoverflow.com/q/15579271
+_ws_preserving_split = re.compile(r'(\s+)').split
+_search_digits = re.compile(r'(\d+)').search
+_replace_digits = re.compile(r'(\d+)').sub
+
+_SEP = str(fx.dim('│'))
+_HEADER = '\nMike-rosoft™ Power Rename%s:\n'
+_EPILOG = '''Example:
 
     prename -R --match '*.mp3' --replace _ ' ' --prepend 'Disc 1 - '
 
 Each text operation will be performed in the order it is listed. Try a few
 options, refine as necessary, then use --execute to commit the changes.
 '''
+acronymdb = [
+    'AB', 'ABBA', 'ABC', 'ACDC', 'ATB', 'BIG', 'BBC', 'BPM', 'CCCP', 'DJ',
+    'DJ\'s', 'DJs', 'DMC', 'EFX', 'EMF', 'INXS', 'KC', 'KLF', 'KWS', 'LL',
+    'MC', 'MC\'s', 'MCs', 'MTV', 'NWA', 'OMC', 'PM', 'PYT', 'REM', 'SOS',
+    'TLC', 'UB40', 'US3', 'USA', 'USSR', 'VIP', 'XTC', 'YMCA', 'ZZ'
+]
 
 
 def filtered_files_generator(filter_arg, files_iterator):
@@ -60,8 +65,7 @@ def fmt_display(text):
 def smartcap(text):
     ''' Known acronyms are returned in the correct form. '''
     result = []
-    # ws preserving split: https://stackoverflow.com/q/15579271
-    for word in re.split(r'(\s+)', text):
+    for word in _ws_preserving_split(text):
         up = word.upper()
         if up in acronymdb:
             result.append(up)
@@ -118,9 +122,9 @@ def select_files(args):
 def main(args):
     status = os.EX_OK
     if args.execute:
-        print(HEADER % '')
+        print(_HEADER % '')
     else:
-        print(HEADER % ' Preview')
+        print(_HEADER % ' Preview')
 
     files = select_files(args)
     logging.debug('files: %s', files)
@@ -155,12 +159,11 @@ def main(args):
                 pos += 2  # skip two
 
             elif param in ('-z', '--zfill'):
-                pattern = '(\d+)'
-                _match = re.search(pattern, new_fn)
+                _match = _search_digits(new_fn)
                 if _match:
                     group_text = _match.group(1)
                     padded_digits = group_text.zfill(int(args.zfill))
-                    new_fn = re.sub(pattern, padded_digits, new_fn, count=1)
+                    new_fn = _replace_digits(padded_digits, new_fn, count=1)
                 pos += 1  # skip one
 
             elif param in ('-p', '--prepend'):
@@ -239,7 +242,7 @@ def main(args):
             if param != '-v':
                 logging.debug('new_fn: %s %s', param, new_fn)
 
-        print(f'{fmt_display(orig_fn)} {sep} {fmt_display(new_fn)}')
+        print(f'{fmt_display(orig_fn)} {_SEP} {fmt_display(new_fn)}')
 
         if orig_fn == new_fn:
             logging.debug('%r is the same, nothing to do.', orig_fn)
@@ -270,9 +273,13 @@ def main(args):
 def setup():
     ''' Parse, validate command-line, start logging. '''
     from argparse import ArgumentParser, RawTextHelpFormatter
-    parser = ArgumentParser(description=__doc__, epilog=epilog, add_help=False,
-                            formatter_class=lambda prog:
-                                RawTextHelpFormatter(prog, max_help_position=29))
+    parser = ArgumentParser(
+                add_help=False,
+                description=__doc__,
+                epilog=_EPILOG,
+                formatter_class=lambda prog:
+                    RawTextHelpFormatter(prog, max_help_position=29)
+             )
 
     sgroup = parser.add_argument_group('Simple string ops')
     sgroup.add_argument('-c', '--capitalize',
