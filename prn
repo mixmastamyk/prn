@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 '''
-    Mike-rosoft Power File Rename (c) 2003-2018, by Mike Miller
+    Mike-rosoft™ Power File Rename (c) 2003-2018, by Mike Miller
     A tool to rename large numbers of files, such as MP3s or images.
 
     String modification operations are done in the order that they occur on the
-    command-line for each filename found.  This is so that results are
+    command-line for each filename found.  This is done so that results are
     consistent with expectations.
 '''
 import os
@@ -17,8 +17,8 @@ from os.path import exists, join, split, splitext
 from console import fx
 
 
-__version__ = '0.80a8'
-prog_name = 'Mike-rosoft Power Rename'
+__version__ = '0.80a9'
+HEADER = '\nMike-rosoft™ Power Rename%s:\n'
 _column_width = 40  # default column width
 sep = str(fx.dim('│'))
 acronymdb = [
@@ -37,7 +37,7 @@ options, refine as necessary, then use --execute to commit the changes.
 
 
 def filtered_files_generator(filter_arg, files_iterator):
-    ''' A generator function to avoid loading all filenames at once. '''
+    ''' A filtered generator function, avoids loading all filenames at once. '''
     from fnmatch import fnmatch
 
     for fn in files_iterator:
@@ -74,7 +74,7 @@ def smartcap(text):
 
 
 def select_files(args):
-    ''' Build and return an iterable/iterator  of files to operate on. '''
+    ''' Build and return an iterable/iterator of files to operate on. '''
     if args.files:
         files = args.files
 
@@ -118,9 +118,9 @@ def select_files(args):
 def main(args):
     status = os.EX_OK
     if args.execute:
-        print(f'\n{prog_name}:\n')
+        print(HEADER % '')
     else:
-        print(f'\n{prog_name}:\n')
+        print(HEADER % ' Preview')
 
     files = select_files(args)
     logging.debug('files: %s', files)
@@ -194,15 +194,15 @@ def main(args):
                 base, ext = splitext(new_fn)
                 new_fn = base + ext.lower()
             elif param in ('-u', '--upper'):
-                base, ext = splitext(new_fn)
-                new_fn = base.upper() + ext
+                new_fn = new_fn.upper()
             elif param in ('-s', '--strip'):
-                new_fn = new_fn.strip()
+                base, ext = splitext(new_fn)
+                new_fn = base.strip() + ext.strip()
 
-            elif param == '--reorder':
+            elif param in ('-o', '--reorder'):
                 spos, dpos = int(sys.argv[pos+1]), int(sys.argv[pos+2])
-
-                newlist = new_fn.split()
+                base, ext = splitext(new_fn)
+                newlist = base.split()
                 length = len(newlist)
                 # Make sure indexes are within bounds
                 if spos >= length:
@@ -212,8 +212,24 @@ def main(args):
                 token = newlist.pop(spos)
 
                 newlist.insert(dpos, token)
-                new_fn = ' '.join(newlist)
+                new_fn = ' '.join(newlist) + ext
                 pos = pos + 2  # skip two
+
+            elif param in ('-S', '--swap-on'):
+
+                base, ext = splitext(new_fn)
+                front, delim, back = base.partition(sys.argv[pos+1])
+                if delim:  # found
+                    # handle/fix spaces if necessary, only singles
+                    if front and front[-1].isspace():
+                        front = front[-1] + front[:-1]
+                    if back and back[0].isspace():
+                        back = back[1:] + back[0]
+
+                    new_fn = back + delim + front + ext
+                # else skip
+                pos = pos + 1  # skip one
+            # done with ops
 
             if args.recursive:  # now add folder back
                 new_fn = join(_dirname, new_fn)
@@ -239,7 +255,7 @@ def main(args):
                     logging.error('✗ error: unable to rename: ', orig_fn)
             else:
                 if exists(new_fn):
-                    logging.warn('  ⚠ file exists: %r.' % new_fn)
+                    logging.warn('  ⚠ file exists: %r' % new_fn)
 
     print()
     if args.execute:
@@ -255,7 +271,27 @@ def setup():
     ''' Parse, validate command-line, start logging. '''
     from argparse import ArgumentParser, RawTextHelpFormatter
     parser = ArgumentParser(description=__doc__, epilog=epilog, add_help=False,
-                            formatter_class=RawTextHelpFormatter)
+                            formatter_class=lambda prog:
+                                RawTextHelpFormatter(prog, max_help_position=29))
+
+    sgroup = parser.add_argument_group('Simple string ops')
+    sgroup.add_argument('-c', '--capitalize',
+        action='store_true',
+        help='Smart Capitalize Each Word, incl. known acronyms.',
+    )
+    sgroup.add_argument('-l', '--lower',
+        action='store_true', help='To lower case.'
+    )
+    sgroup.add_argument('-L', '--lower-ext',
+        action='store_true',
+        help='Lower extension only, e.g.: Foo.JPG → Foo.jpg.'
+    )
+    sgroup.add_argument('-u', '--upper',
+        action='store_true', help='To UPPER case.'
+    )
+    sgroup.add_argument('-s', '--strip',
+        action='store_true', help='Remove whitespace from ends.'
+    )
 
     mgroup = parser.add_argument_group('String manipulation')
     mgroup.add_argument('-r', '--replace',
@@ -264,7 +300,7 @@ def setup():
     )
     mgroup.add_argument('-x', '--re-sub',
         metavar=('R', 'N'), nargs=2,
-        help='Replace regular expression match w/ new string.'
+        help='Replace regular eXpression match w/ new string.'
     )
     mgroup.add_argument('-p', '--prepend',
         metavar='S', help='Insert a string before filename.'
@@ -277,55 +313,42 @@ def setup():
     )
     mgroup.add_argument('-i', '--insert',
         metavar=('P', 'S'), nargs=2,
-        help='General insert of a string at given position.'
+        help='Insert a string at the given position (neg ok).'
     )
     mgroup.add_argument('-o', '--reorder',
         metavar=('SP', 'DP'), nargs=2, type=int,
         help='Re-arrange word tokens in filename, given source-\n'
-        'position and dest-position (neg index avail).'
+        'position and dest-position (neg index ok).'
+    )
+    mgroup.add_argument('-S', '--swap-on',
+        metavar='C', nargs=1,
+        help='Swap two parts of base filename, split on a given\n'
+        'delimiter character, e.g. "-".'
     )
     mgroup.add_argument('-z', '--zfill',
         metavar='N', help='Left-pad first group of digits with N zeros.'
     )
 
-    sgroup = parser.add_argument_group('Simple string ops')
-    sgroup.add_argument('-c', '--capitalize',
-        action='store_true',
-        help='Smart Capitalize Each Word, not known acronyms.',
-    )
-    sgroup.add_argument('-l', '--lower',
-        action='store_true', help='To lower case.'
-    )
-    sgroup.add_argument('-L', '--lower-ext',
-        action='store_true', help='Fix an uppercase extension, e.g.: Foo.JPG.'
-    )
-    sgroup.add_argument('-u', '--upper',
-        action='store_true', help='To UPPER case.'
-    )
-    sgroup.add_argument('-s', '--strip',
-        action='store_true', help='Remove whitespace from ends.'
-    )
-
     fgroup = parser.add_argument_group('File selection ops')
     fgroup.add_argument('-m', '--match',
         action='append', default=[], metavar='"G"',
-        help='Select files with glob support, defaults to "*".\n'
+        help='Select files with glob support, multiple allowed.\n'
              'Use when files exceed command-line length.'
     )
     fgroup.add_argument('-f', '--filter',
         action='append', default=[], metavar='"G"',
-        help='Exclude these files from selection, with glob support. '
+        help='Exclude these files from selection, (+glob, mult).'
     )
     fgroup.add_argument('-R', '--recursive',
-        action='store_true', help='Recursive find of files in subfolders too.'
+        action='store_true', help='Select files in subfolders too.'
     )
     fgroup.add_argument('-e', '--execute',
         action='store_true',
-        help='Execute rename operation, defaults to preview.'
+        help='! Execute rename operations, defaults to preview.'
     )
     fgroup.add_argument('files',
         metavar='filename', nargs='*',
-        help='A list of files, or blank to search current folder.'
+        help='List of files, leave blank to search current dir.'
     )
 
     cgroup = parser.add_argument_group('Common options')
