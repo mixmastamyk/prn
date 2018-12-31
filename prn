@@ -17,7 +17,7 @@ from os.path import exists, join, split, splitext
 from console import fx
 
 
-__version__ = '0.80a9'
+__version__ = '0.80'
 HEADER = '\nMike-rosoft™ Power Rename%s:\n'
 _column_width = 40  # default column width
 sep = str(fx.dim('│'))

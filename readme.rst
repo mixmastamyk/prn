@@ -38,9 +38,13 @@ Feel free to experiment, help is available of course::
 
     ⏵ prn -h  # or --help
 
+
 Note:  --longform options in the following examples have one-letter
 abbreviated aliases that are typically the first letter of the long form, e.g.:
  ``--replace``  becomes  ``-r``.
+
+Also, all options of ``prn`` can be passed multiple times,
+allowing more to be done in a single invocation and enabling complex scenarios.
 
 
 File Selection
@@ -109,7 +113,7 @@ Now you've got two problems, *wink.*
 Padding Frame Numbers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This option is inflexible but did the one thing I needed::
+This option is relatively inflexible but did the one thing I needed::
 
     ⏵ prn --zfill 4 *.tif
 
