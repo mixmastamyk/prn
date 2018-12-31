@@ -1,0 +1,283 @@
+#!/usr/bin/env python2
+# This is the ancient version from 2003.
+
+# A nice script to rename files, such as mp3's.  Speed is traded off for the
+# ability to run the string operations in order for each file.  Consequently,
+# when performing many operations on many files, it might be less than
+# instantaneous.  In such case you can run fewer operations per run. ;)
+
+# Wanted feature:
+#   pad number exts for images
+#   a don't match switch
+# When in recursive mode, folders aren't renamed at this time.  Too many issues
+# came up with it, so if you want to rename folders you will have to exec from
+# the parent folder.
+
+#add update to not change file if the name is the same
+# bugs: -s doesn't update folders
+# fix recursive
+# quiet option
+
+import sys, os
+from string import *
+
+
+print_templ = '%-60.60s %-60.60s'
+acronymdb  = [
+    'AB', 'ABBA', 'ABC', 'ACDC', 'ATB', 'B.I.G.', 'BBC', 'BPM', 'CCCP', 'DJ',
+    "DJ's", 'DJs', 'DMC', 'EFX', 'EMF', 'INXS', 'KC', 'KLF', 'KWS', 'LL', 'MC',
+    'M.C.', "MC's", 'MTV', 'NWA', 'OMC', 'PM', 'PYT', 'R.E.M.', 'SOS', 'TLC',
+    'UB40', 'US3', 'USA', 'USSR', 'VIP', 'XTC', 'YMCA', 'ZZ'
+]
+
+
+def printhelp():
+
+    print '''
+Mike-rosoft Power File Renamer (c) 2003, by Mike Miller
+
+    -rep <src> <dst>            replace source string with destination
+    -regsub '<regexp>' <dst>    replace regular expresion match with destination
+    -ins <pos> <str>            insert a string at position <pos>
+    -pre <str>                  add a string before filename
+    -app <str>                  add a string after  filename
+    -reorder <src> <dst>        rearange words in filename, can use neg index. *
+
+    -cap                        Capitalize Each Word
+    -low                        to lower case
+    -upp                        to upper case
+    -strip                      strip whitespace from ends
+
+    -match '<filter>'           perform ops on these files only, default = "*"
+    -s                          find files in subfolders too
+    -h                          this help message
+    -exec                       execute rename operation
+                                default only previews results
+
+    Example: prename -s -match "*.mp3" -rep _ " " -pre "Disc 1 - "
+
+    Each text operation will be perfomed in the order it is listed.
+    Try a few commands, refine as necessary, then use -exec to commit the changes.
+    * New, not well tested.
+'''
+
+def smartcap(word):
+    ''' A capitalization function that looks to see if there are not
+        symbols concealing the first letter.  Known acronyms are returned.
+    '''
+    newword = ''
+    complete = 0
+
+    up = upper(word)
+    if up in acronymdb:  return up
+
+    for i in range(len(word)):
+        if not complete and word[i] in ascii_letters:
+            newword = newword + upper(word[i])
+            complete = 1
+        else:
+            newword = newword + lower(word[i])
+    return newword
+
+
+def wordop(type, data):
+
+    #word operations
+    words = split(data)
+    newwords = []
+    for word in words:
+
+        if type == '-cap':      word = smartcap(word)
+        if type == '-low':      word = lower(word)
+        if type == '-upp':      word = upper(word)
+        if type == '-strip':    word = strip(word)
+        newwords.append(word)
+
+    return join(newwords)
+
+
+
+def rename():
+
+    bringit = 0
+    recursivefind = 0
+    error = 0
+    filepattern = '*'
+
+    for param in sys.argv:
+        #script ops
+        if param == '-match':
+            try:
+                where = sys.argv.index('-match')
+                filepattern = sys.argv[where + 1]
+            except:
+                sys.exit('Error: -match needs one valid argument')
+
+        if param == '-exec':    bringit = 1
+        if param == '-s':       recursivefind = 1
+        if param == '-h':
+            printhelp()
+            sys.exit()
+
+    if recursivefind:
+        # import findfiles
+        # files = findfiles.findfiles('.', filepattern, False)
+        import fnmatch  # above doesn't work?  why?
+        files = []
+        for root, dirs, fnames in os.walk('.'):
+            for filename in fnames:
+                if fnmatch.fnmatch(filename, filepattern):
+                    files.append( os.path.join(root, filename) )
+    else:
+        if filepattern <> '*':
+            import glob
+            files = glob.glob(filepattern)
+        else:
+            files = os.listdir('.')
+
+    files.sort()
+    print '\nMike-rosoft Power Rename Preview:\n'
+    # and rename each file
+    for file in files:
+
+        # We will look at the cmd line params again
+        # to perform the operations in the proper order
+        position = 1
+        newfile = file
+        while position < len(sys.argv):
+
+            param = sys.argv[position]
+            if recursivefind:  # need to modify filename only, so remove folders before operations
+
+                dirname  = os.path.dirname(newfile)
+                basename = os.path.basename(newfile)
+                newfile = basename
+
+            #whole line ops
+            if param == '-rep':
+                if (len(sys.argv) - position - 3) < 0:
+                    sys.exit('Error: not enough arguments for rep')
+
+                source = sys.argv[position+1]
+                dest = sys.argv[position+2]
+                if source[0] == '-' or (len(dest) > 0 and dest[0] == '-'):
+                    sys.exit('Error: -rep needs two valid arguments')
+
+                if dest == '\\': dest = ''
+                newfile = replace(newfile, sys.argv[position+1], dest)
+                position = position + 2  #skip two
+
+            if param == '-regsub':
+                if (len(sys.argv) - position - 3) < 0:
+                    sys.exit('Error: not enough arguments for regsub')
+
+                source = sys.argv[position+1]
+                dest = sys.argv[position+2]
+                #~ if source[0] == '-' or (len(dest) > 0 and dest[0] == '-'):
+                    #~ sys.exit('Error: -regsub needs two valid arguments')
+
+                import re # inefficient
+                newfile = re.sub(sys.argv[position+1], sys.argv[position+2], newfile)
+                position = position + 2  #skip two
+
+            if param == '-ins':
+                if (len(sys.argv) - position - 3) < 0:
+                    sys.exit('Error: not enough arguments for ins')
+
+                strpos     = sys.argv[position+1]
+                newstring  = sys.argv[position+2]
+                #if spos[0] == '-' or (len(dest) > 0 and dest[0] == '-'):
+                    #sys.exit('Error: -ins needs two valid arguments')# doesn't work because of possible negative numbers
+
+                newlist = list(newfile)
+                s = int(strpos)
+                length = len(newlist)
+                if s < 0: s = length + s   # convert to pos index
+
+                newlist.insert(s, newstring)
+                newfile = join(newlist, '')
+                position = position + 2  #skip two
+
+            if param == '-reorder':
+                if (len(sys.argv) - position - 3) < 0:
+                    sys.exit('Error: not enough arguments for ins')
+
+                src = sys.argv[position+1]
+                dest = sys.argv[position+2]
+                #if src[0] == '-' or (len(dest) > 0 and dest[0] == '-'):
+                    #sys.exit('Error: -reorder needs two valid arguments')
+                    # doesn't work because of possible negative numbers
+
+                s = int(src);  d = int(dest)
+                newlist = split(newfile)
+                length = len(newlist)
+                # Make sure indexes are within bounds
+                if s >= length: s = length -1
+                if d < 0: d = length + d + 1   # convert to pos index
+                token = newlist.pop(s)
+
+                newlist.insert(d, token)
+                newfile = join(newlist)
+                position = position + 2  #skip two
+
+            if param == '-pre':
+                if (len(sys.argv) - position - 2) < 0:
+                    sys.exit('Error: not enough arguments')
+
+                if sys.argv[position+1][0] == '-':
+                    sys.exit('Error: -pre needs a valid argument')
+
+                newfile = sys.argv[position+1] + newfile
+                position = position + 1  #skip one
+
+            if param == '-app':
+                if (len(sys.argv) - position - 2) < 0:
+                    sys.exit('Error: not enough arguments')
+
+                if sys.argv[position+1][0] == '-':
+                    sys.exit('Error: -app needs a valid argument')
+
+                newfile = newfile + sys.argv[position+1]
+                position = position + 1  #skip one
+
+            if param == '-fixext':
+
+                tmp = split(newfile)
+                if len(tmp) < 2 or (len(tmp[-1]) != 3):
+                    position = position + 1
+                    continue
+                tmp[-2] = tmp[-2] + '.' + lower(tmp[-1])
+                del(tmp[-1])
+                newfile = join(tmp)
+
+            #per word operations
+            if param in ['-cap', '-low', '-upp', '-strip']:
+                newfile = wordop(param, newfile)
+
+            if recursivefind:  # now add folder back
+                newfile = os.path.join(dirname, newfile)
+            # if param not recognized, it gets skipped
+            position = position + 1
+
+        print print_templ % (file, newfile)
+
+        if bringit:
+            try:
+                if os.exists(newfile):
+                    print('file exists: %r' % newfile)
+                else:
+                    os.rename(file, newfile)
+            except:
+                error = 1
+                print "error: unable to rename: ", file
+
+    if bringit:  print '\nOperation Executed.'
+    if error:    print '\n*** An Error Ocurred. ***'
+
+
+if __name__=='__main__':
+
+    if len(sys.argv) == 1:
+        printhelp()
+    else:
+        rename()
