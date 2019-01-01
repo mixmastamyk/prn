@@ -14,7 +14,7 @@ import logging
 
 from os.path import exists, join, split, splitext
 
-from console import fx
+from console import fg, fx
 
 
 __version__ = '0.81a1'
@@ -25,6 +25,10 @@ _search_digits = re.compile(r'(\d+)').search
 _replace_digits = re.compile(r'(\d+)').sub
 
 _SEP = str(fx.dim('│'))
+_OK = str((fg.green + fx.bold)('✓'))
+_WARN = str((fg.yellow + fx.bold)('⚠'))
+_ERR = str((fg.red + fx.bold)('✗'))
+_SP = ''
 _HEADER = '\nMike-rosoft™ Power Rename%s:\n'
 _EPILOG = '''Example:
 
@@ -55,7 +59,11 @@ def fmt_display(text):
     text_len = len(text)
 
     if text_len > _column_width:
-        text = text[:_column_width - 1] + '…'
+        if args.align_right:
+            text = '…' + text[abs(len(text) - _column_width) + 1:] # trunc left
+        else:
+            text = text[:_column_width - 1] + '…'  # trunc right
+
     elif text_len < _column_width:
         text = text.ljust(_column_width, ' ')
 
@@ -138,6 +146,7 @@ def main(args):
             logging.warn('empty filename %r encountered, skipping.', orig_fn)
             continue
         pos = 1
+        mode = _OK
         new_fn = orig_fn
         len_args = len(sys.argv)
 
@@ -200,7 +209,7 @@ def main(args):
                 new_fn = new_fn.upper()
             elif param in ('-s', '--strip'):
                 base, ext = splitext(new_fn)
-                new_fn = base.strip() + ext.strip()
+                new_fn = base.strip() + ext.replace(' ', '')
 
             elif param in ('-o', '--reorder'):
                 spos, dpos = int(sys.argv[pos+1]), int(sys.argv[pos+2])
@@ -242,30 +251,42 @@ def main(args):
             if param != '-v':
                 logging.debug('new_fn: %s %s', param, new_fn)
 
-        print(f'{fmt_display(orig_fn)} {_SEP} {fmt_display(new_fn)}')
+        # unfortunately a bit of duplicated code here, needs to know twice
+        already_exists = exists(new_fn)
+        nothing_happened = (orig_fn == new_fn)
+        if already_exists:
+            mode = _WARN
+        if nothing_happened:
+            mode = ' '
+        else:
+            if args.execute and already_exists:
+                mode = _ERR
 
-        if orig_fn == new_fn:
+        print(f'{fmt_display(orig_fn)} {_SEP} {fmt_display(new_fn)}{_SP}{mode}')
+
+        if nothing_happened:
             logging.debug('%r is the same, nothing to do.', orig_fn)
         else:
             if args.execute:
                 try:
-                    if exists(new_fn):
-                        logging.warn('⚠ file exists: %r, skipping.' % new_fn)
+                    if already_exists:
+                        status = os.EX_DATAERR
+                        logging.error('%r exists, skipping.' % new_fn)
                     else:
                         os.rename(orig_fn, new_fn)
                 except IOError:
                     status = os.EX_IOERR
-                    logging.error('✗ error: unable to rename: ', orig_fn)
+                    logging.error('error: unable to rename: ', orig_fn)
             else:
-                if exists(new_fn):
-                    logging.warn('  ⚠ file exists: %r' % new_fn)
+                if already_exists:
+                    logging.warn('%r exists.' % new_fn)
 
     print()
-    if args.execute:
-        logging.info('✓ Operations Executed.')
-
     if status:
-        logging.info('*** ✗ An Error Occurred. ***')
+        logging.warn('An error occurred.')
+    elif args.execute:
+        logging.info('Operations executed w/o error.')
+
 
     return status
 
@@ -336,7 +357,7 @@ def setup():
         metavar='N', help='Left-pad first group of digits with N zeros.'
     )
 
-    fgroup = parser.add_argument_group('File selection ops')
+    fgroup = parser.add_argument_group('File selection/view ops')
     fgroup.add_argument('-m', '--match',
         action='append', default=[], metavar='"G"',
         help='Select files with glob support, multiple allowed.\n'
@@ -348,6 +369,9 @@ def setup():
     )
     fgroup.add_argument('-R', '--recursive',
         action='store_true', help='Select files in subfolders too.'
+    )
+    fgroup.add_argument('--align-right', action='store_true',
+        help='Useful when end of filename is not visible, shifts it left.'
     )
     fgroup.add_argument('-e', '--execute',
         action='store_true',
@@ -386,7 +410,10 @@ if __name__ == '__main__':
     from shutil import get_terminal_size
 
     cols = get_terminal_size((80, 20)).columns
-    _column_width = int(cols / 2) - 3  # minus column padding, border
+    padding = 2  # minus column padding, border, ico
+    _column_width = int(cols / 2) - padding
+    if cols % 2:
+        _SP = ' ' # Odd
 
     try:
         args = setup()
