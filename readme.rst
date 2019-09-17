@@ -143,7 +143,8 @@ When what you want to replace varies a bit between filenames use a regex:
 
 .. code-block:: shell
 
-    ⏵ prn --re-sub '\s+' ' '  # collapse whitespace to a single space
+    # collapse whitespace to a single space
+    ⏵ prn --re-sub '\s+' ' '
 
 Now you've got two problems, *wink.*
 
@@ -184,7 +185,7 @@ then later returning it to its original form:
 
 .. code-block:: shell
 
-    # replace, pad, return
+    # replace, pad, then return
     ⏵ prn -r foo1 @ -z 4 -r @ foo1 *.tif
 
     foo1.3.tif                          │ foo1.0003.tif
