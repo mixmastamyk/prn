@@ -9,13 +9,13 @@ with silly name.
 Background
 -----------------------
 
-This tool does string modification operations in the order that they occur on
-the command-line,
-for each filename selected.
+This tool does string updates on filenames in the order that
+they occur on the command-line.
 This is done so that results are consistent with expectations.
 If modifications interact in unfortunate ways,
 they may be reordered to suit.
 This was a design goal.
+(The final rename happens once however.)
 
 Consequently, when performing many operations on a
 *absolutley huge* number of files,
@@ -26,8 +26,9 @@ at a time.
 As many filesystems are unhappy with huge numbers of files in a single folder,
 this limitation hasn't been found to be a problem in practice so far.
 
-Notably, PRN or *pro re nata* in Latin, is used in the medical industry as an
-abbreviation for *as needed*.
+
+Note that the term PRN (from *pro re nata* in Latin),
+is used in the medical industry as an abbreviation for *as needed*.
 Therefore use ``prn`` as needed and directed under the supervision of a
 physician.
 
@@ -50,9 +51,10 @@ Installen-Sie, Bitte
 Examples
 -----------------------
 
-Quick start with something simple—\
+A quick start with something simple—\
 to replace underscores with spaces on some mp3s,
-try this:
+try this,
+is shown below:
 
 .. code-block:: shell
 
@@ -99,7 +101,7 @@ There are several ways to select files for renaming.
 
 - As one may want to exclude some of the files gathered, filter is available::
 
-    ⏵ prn --filter 'Rick Astley*'  # OP1 OP2…
+    ⏵ prn --filter 'Rick Astley*'  # Never gonna…
 
   Match and filter may be passed multiple times to add to or subtract from the
   selected file set.
@@ -108,7 +110,7 @@ There are several ways to select files for renaming.
 
 - Additionally, if there are no extraneous files in the current folder,
   selection criteria may be omitted.
-  A listing of all files in the current folder will be used instead:
+  A selection of all files in the current folder will be used instead:
 
   .. code-block:: shell
 
@@ -139,11 +141,12 @@ When an absolute path is passed, you must handle it yourself.
 Regular Expression Substitutions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When what you want to replace varies a bit between filenames use a regex:
+When what you want to replace varies a bit between filenames,
+use a regex:
 
 .. code-block:: shell
 
-    # collapse whitespace to a single space
+    # collapse consecutive whitespace to a single space
     ⏵ prn --re-sub '\s+' ' '
 
 Now you've got two problems, *wink.*
@@ -186,7 +189,7 @@ then later returning it to its original form:
 .. code-block:: shell
 
     # replace, pad, then return
-    ⏵ prn -r foo1 @ -z 4 -r @ foo1 *.tif
+    ⏵ prn -r foo1 @  -z 4  -r @ foo1  *.tif
 
     foo1.3.tif                          │ foo1.0003.tif
     foo1.4.tif                          │ foo1.0004.tif
@@ -194,7 +197,7 @@ then later returning it to its original form:
 This works since operation arguments are processed in order from left to right.
 Use a character for substitution that is not being used in the filenames,
 of course.
-Here we used ``@``.
+Here we used the "``@``" symbol.
 
 
 Operations
@@ -238,7 +241,20 @@ finalize them with ``-e`` or ``--execute`` like so:
 
 *Whoomp!  There it is.*
 
-For safety ``prn`` won't rename files to destinations that already exist,
-and will notify you early when they do.
+
+Safety
+--------
+
+``prn`` is written with safety in mind.
+
+It won't make changes until you are happy with the results and pass the execute
+flag.
+It won't rename files to destinations that already exist,
+and will notify you right away when they do.
+Despite its version number it has been used for (pushing two) decades now.
+
+However, as mentioned it was ported recently to Python3.
+There is a test suite but it is not currently large.
+Therefore:
 
 *☛  Make a backup before trusting with large or important file collections. ☚*

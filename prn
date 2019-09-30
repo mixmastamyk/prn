@@ -17,14 +17,14 @@ from os.path import exists, join, split, splitext
 from console import fg, fx
 
 
-__version__ = '0.81a2'
+__version__ = '0.81a3'
 _column_width = 40
 # split that preserves whitespace, https://stackoverflow.com/q/15579271
 _ws_preserving_split = re.compile(r'(\s+)').split
 _search_digits = re.compile(r'(\d+)').search
 _replace_digits = re.compile(r'(\d+)').sub
 
-_SEP = fx.dim + '│' + fx.end
+_SEP = fx.dim('│')
 _OK = fg.green + fx.bold + '✓' + fx.end
 _WARN = fg.yellow + fx.bold + '⚠' + fx.end
 _ERR = fg.red + fx.bold + '✗' + fx.end
@@ -190,7 +190,8 @@ def main(args):
                 pos += 1  # skip one
 
             elif param in ('-A', '--append-ext'):
-                new_fn = new_fn + sys.argv[pos+1]
+                ext = sys.argv[pos+1]
+                new_fn = new_fn + (ext if ext.startswith('.') else '.' + ext)
                 pos += 1  # skip one
 
             elif param in ('-i', '--insert'):
@@ -211,7 +212,7 @@ def main(args):
                         new_fn = smartcap(base) + ext
                     else:
                         new_fn = smartcap(new_fn)
-                except IndexError as err:
+                except IndexError:
                     pass
 
             elif param in ('-l', '--lower'):
@@ -291,13 +292,13 @@ def main(args):
                         os.rename(orig_fn, new_fn)
                     except IOError:
                         status = os.EX_IOERR
-                        logging.error('error: unable to rename: ', orig_fn)
+                        logging.error('error: unable to rename: %r', orig_fn)
             else:
                 if already_exists:
-                    logging.warn('%r exists.' % new_fn)
+                    logging.warning('%r exists.' % new_fn)
     print()
     if status:
-        logging.warn('An error occurred.')
+        logging.warning('An error occurred.')
     elif args.execute:
         logging.info('Operations executed w/o error.')
 
@@ -427,8 +428,8 @@ if __name__ == '__main__':
     cols = get_terminal_size((80, 20)).columns
     padding = 2  # minus column padding, border, ico
     _column_width = int(cols / 2) - padding
-    if cols % 2:
-        _SP = ' ' # Odd
+    if cols % 2:  # is odd
+        _SP = ' '
 
     try:
         args = setup()
