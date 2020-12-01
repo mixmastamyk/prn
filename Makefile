@@ -31,10 +31,12 @@ test: check_readme
 	cp -R original results; \
 	\
 	cd results; \
+	\
 	prn -r foo1 @   -z 4   -r @ foo1   -e   *.tif; \
+	prn -p img_ -x '[A-F\d-]+' '%02i' -e   *.jpeg; \
 	prn -a _baz   --match foo_bar.txt   -e; \
 	prn --append-ext txt   --match no_ext_file   -e; \
-	prn -c -R --re-sub '\s+' ' ' -e; \
+	prn -c -R --re-sub '\s+' ' ' --filter '*.jpeg'  -e; \
 	prn --lower-ext   --execute   *.Sh; \
 	\
 	cd ..; \

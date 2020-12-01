@@ -1,36 +1,41 @@
 
-Mike-rosoft Power File Renamer (c) 2003-2019
+Mike-rosoft Power File Renamer (c) 2003-2020
 ==============================================
 
 A tool to rename large numbers of files, such as MP3s or images.
 Recently ported to Python 3.6+ from ancient untouched 2.0-era source complete
-with silly name.
+with its original silly name.
+
 
 Background
 -----------------------
 
-This tool does string updates on filenames in the order that
+In short,
+this tool does string updates on filenames in the order that
 they occur on the command-line.
-This is done so that results are consistent with expectations.
-If modifications interact in unfortunate ways,
+
+It is done this way so that results are consistent with expectations.
+Therefore,
+if the given modifications interact in unfortunate ways,
 they may be reordered to suit.
 This was a design goal.
-(The final rename happens once however.)
+
+The final rename happens at once however.
+No need to worry about files renamed half-way then.
 
 Consequently, when performing many operations on a
 *absolutley huge* number of files,
 it might be less than instantaneous,
 due to the inefficiencies of looping through the argument list for each file.
-In such case you can run fewer operations per run, or change a subset of files
-at a time.
+In such case you can run fewer operations per run,
+or change a subset of files at a time.
 As many filesystems are unhappy with huge numbers of files in a single folder,
 this limitation hasn't been found to be a problem in practice so far.
-
 
 Note that the term PRN (from *pro re nata* in Latin),
 is used in the medical industry as an abbreviation for *as needed*.
 Therefore use ``prn`` as needed and directed under the supervision of a
-physician.
+physician:
 
     *All information, content, and material of this website is for informational
     purposes only and are not intended to serve as a substitute for the
@@ -63,7 +68,8 @@ is shown below:
 Don't worry—this will simply show a preview of the results and won't do
 anything until confirmed,
 as we'll see later.
-Feel free to experiment, help is available of course:
+Feel free to experiment,
+help is available of course:
 
 .. code-block:: shell
 
@@ -79,7 +85,7 @@ scenarios.
 
 
 File Selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 There are several ways to select files for renaming.
 
@@ -92,14 +98,15 @@ There are several ways to select files for renaming.
 
         ⏵ prn … foo.bar *.mp3
 
-- In a folder with large numbers of files,
+- In a folder with huge numbers of files,
   command-line limits may be bypassed with ``--match 'GLOB'`` as shown below:
 
   .. code-block:: shell
 
         ⏵ prn --match '*.mp3'  # OP1 OP2…
 
-- As one may want to exclude some of the files gathered, filter is available::
+- As one may want to exclude some of the files gathered,
+  filter is available::
 
     ⏵ prn --filter 'Rick Astley*'  # Never gonna…
 
@@ -110,7 +117,7 @@ There are several ways to select files for renaming.
 
 - Additionally, if there are no extraneous files in the current folder,
   selection criteria may be omitted.
-  A selection of all files in the current folder will be used instead:
+  All files in the current folder will be selected instead:
 
   .. code-block:: shell
 
@@ -122,15 +129,17 @@ Recursive Mode
 
 This will find files in and below the current folder.
 
-When in recursive mode, note that currently folders aren't renamed.  Too
+When in recursive mode, note that folders aren't renamed.  Too
 many issues came up,
-so to rename folders you'll have to rename from each parent folder.
+so to rename folders you'll have to rename them from each parent folder.
 
 .. code-block:: shell
 
-    # all mp3s at or below this folder:
-    ⏵ prn -R --match '*.mp3' --replace _ ' '
+    # all jpegs at or below this folder:
+    ⏵ prn -R --match '*.jpeg' --replace .jpeg .jpg
 
+
+.. TODO: Huh?  Need to explain
 
 Note that the glob method oddly requires a ``'**/'`` before the folder you want
 to walk.
@@ -138,18 +147,60 @@ Power renamer handles that for you when a relative path is passed to match.
 When an absolute path is passed, you must handle it yourself.
 
 
+Common String Operations
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Numerous helpful string operations are also available:
+
+- ``-c --capitalize``  A "smart cap" of words
+- ``-l --lower --lower-ext``
+- ``-u --upper``
+- ``-s --strip``
+- ``--insert STR  --append STR  --prepend STR``
+
+
+Simple Replace
+~~~~~~~~~~~~~~~~
+
+We've already seen how ``--replace old new`` or its short form ``-r old new``
+works above.
+It'll likely be your most used operation,
+the workhorse.
+
+
 Regular Expression Substitutions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When what you want to replace varies a bit between filenames,
-use a regex:
+use a regex instead:
 
 .. code-block:: shell
 
     # collapse consecutive whitespace to a single space
     ⏵ prn --re-sub '\s+' ' '
 
+``-x …`` works too.
+
 Now you've got two problems, *wink.*
+
+
+Adding an Index Number
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Several of the operations,
+such as replacement, insert, append, and prepend support an index number,
+assigned in the order of the file selection list.
+Below we do a regex replace,
+substituting a GUID (of hex digits) with a zero padded index number:
+
+.. code-block:: shell
+
+    ⏵ prn -p img_ -x '[A-F\d-]+' '%02i' -r .jpeg .jpg
+
+    DEADBEEF-CAFE-123456.jpeg           │ img_00.jpg                                                      ✓
+    DEADBEEF-CAFE-654321.jpeg           │ img_01.jpg                                                      ✓
+
+A prefix is also added as well as a minor extension tweak.
 
 
 Padding Frame Numbers
@@ -200,17 +251,6 @@ of course.
 Here we used the "``@``" symbol.
 
 
-Operations
-~~~~~~~~~~~~~~
-
-Numerous helpful string operations are also available:
-
-- ``-c --capitalize``
-- ``-l --lower --lower-ext``
-- ``-u --upper``
-- ``-s --strip``
-- ``--insert STR  --append STR  --prepend STR``
-
 See ``-h`` for further details.
 
 
@@ -222,21 +262,21 @@ you'll likely update the command-line a few times,
 until things are just to your liking,
 in terms of file selection and output filenames.
 
+Newbie?
 Hitting the up arrow in the shell often brings your last command-line back for
-editing,
-then hitting enter to see the results is a simple
-matter.
+editing.
+Press Enter to see the results.
 
 
-Commit Changes
------------------------
+Now, Commit Changes
+---------------------
 
-Once happy with the changes,
-finalize them with ``-e`` or ``--execute`` like so:
+Happy with the results?
+Finalize them with ``-e`` or ``--execute`` like so:
 
 .. code-block:: shell
 
-    ⏵ prn --OP1 --OP2…  -e
+    ⏵ prn …  -e
 
 
 *Whoomp!  There it is.*
@@ -250,7 +290,7 @@ Safety
 It won't make changes until you are happy with the results and pass the execute
 flag.
 It won't rename files to destinations that already exist,
-and will notify you right away when they do.
+and will notify you beforehand when they do.
 Despite its version number it has been used for (pushing two) decades now.
 
 However, as mentioned it was ported recently to Python3.

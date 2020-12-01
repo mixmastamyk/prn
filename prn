@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-    Mike-rosoft™ Power File Rename © 2003-2019, by Mike Miller
+    Mike-rosoft™ Power File Rename © 2003-2020, by Mike Miller
     A tool to rename large numbers of files, such as MP3s or images.
 
     String modification operations are done in the order that they occur on the
@@ -17,17 +17,17 @@ from os.path import exists, join, split, splitext
 from console import fg, fx
 
 
-__version__ = '0.81'
+__version__ = '0.82a1'
 _column_width = 40
 # split that preserves whitespace, https://stackoverflow.com/q/15579271
 _ws_preserving_split = re.compile(r'(\s+)').split
 _search_digits = re.compile(r'(\d+)').search
 _replace_digits = re.compile(r'(\d+)').sub
 
-_SEP = fx.dim('│')
-_OK = fg.green + fx.bold + '✓' + fx.end
-_WARN = fg.yellow + fx.bold + '⚠' + fx.end
-_ERR = fg.red + fx.bold + '✗' + fx.end
+_SEP = str(fx.dim('│'))
+_OK = str(fg.green + fx.bold + '✓' + fx.end)
+_WARN = str(fg.yellow + fx.bold + '⚠' + fx.end)
+_ERR = str(fg.red + fx.bold + '✗' + fx.end)
 _SP = ''
 _HEADER = '\nMike-rosoft™ Power Rename%s:\n'
 _EPILOG = '''Example:
@@ -71,6 +71,16 @@ def fmt_display(text):
     return text  # else equal
 
 
+def fmt_index(text, i):
+    ''' Format a filename fragment with an index, if needed. '''
+    try:
+        text = text % i
+    except TypeError:
+        pass
+
+    return text
+
+
 def smartcap(text):
     ''' Capitalize each word of passed in text.
         nown acronyms are returned in the correct form.
@@ -80,12 +90,14 @@ def smartcap(text):
         up = word.upper()
         if up in acronyms:
             result.append(up)
-        elif word in acronyms:
+        elif word in acronyms:  # not very efficient
             result.append(word)
         else:
             up = word.title()
-            if word.endswith("'s"):  # Avoid capping possessives to 'S
+            if up.endswith("'S"):  # Avoid capping possessives to 'S
                 up = up[:-1] + 's'
+            elif up.endswith("'T"): # can't don't
+                up = up[:-1] + 't'
             result.append(up)
 
     return ''.join(result)
@@ -147,12 +159,13 @@ def main(args):
     # We will look at the cmd-line params again
     # to perform the operations *in the given order*
     # inefficient with huge num of files, but most useful in common cases
-    for orig_fn in files:
+    for i, orig_fn in enumerate(files):
         if not orig_fn or orig_fn.isspace():
             logging.warn('empty filename %r encountered, skipping.', orig_fn)
             continue
+
         pos = 1
-        mode = _OK
+        rstat = _OK
         new_fn = orig_fn
         # need to modify filename only, remove folder before operations
         if args.recursive:
@@ -160,16 +173,19 @@ def main(args):
 
         while pos < len_args:
             param = sys.argv[pos]
+            try:
+                next1 = sys.argv[pos+1]
+                next2 = sys.argv[pos+2]
+            except IndexError:  # argparse generally won't allow this
+                next1 = next2 = None  # belt and suspenders
 
             # whole line ops
             if param in ('-r', '--replace'):
-                old, new = sys.argv[pos+1], sys.argv[pos+2]
-                new_fn = new_fn.replace(old, new)
+                new_fn = new_fn.replace(next1, fmt_index(next2, i))
                 pos += 2  # skip two
 
             elif param in ('-x', '--re-sub'):
-                old, new = sys.argv[pos+1], sys.argv[pos+2]
-                new_fn = re.sub(old, new, new_fn)
+                new_fn = re.sub(next1, fmt_index(next2, i), new_fn)
                 pos += 2  # skip two
 
             elif param in ('-z', '--zfill'):
@@ -181,25 +197,24 @@ def main(args):
                 pos += 1  # skip one
 
             elif param in ('-p', '--prepend'):
-                new_fn = sys.argv[pos+1] + new_fn
+                new_fn = next1 + new_fn
                 pos += 1  # skip one
 
             elif param in ('-a', '--append'):
                 base, ext = splitext(new_fn)
-                new_fn = ''.join((base, sys.argv[pos+1], ext))
+                new_fn = ''.join((base, next1, ext))
                 pos += 1  # skip one
 
             elif param in ('-A', '--append-ext'):
-                ext = sys.argv[pos+1]
+                ext = next1
                 new_fn = new_fn + (ext if ext.startswith('.') else '.' + ext)
                 pos += 1  # skip one
 
             elif param in ('-i', '--insert'):
-                str_pos, new = sys.argv[pos+1], sys.argv[pos+2]
-                spos = int(str_pos)
+                spos = int(next1)
                 newlist = list(new_fn)
 
-                newlist.insert(spos, new)
+                newlist.insert(spos, next2)
                 new_fn = ''.join(newlist)
                 pos += 2  # skip two
 
@@ -227,7 +242,7 @@ def main(args):
                 new_fn = base.strip() + ext.replace(' ', '')
 
             elif param in ('-o', '--reorder'):
-                spos, dpos = int(sys.argv[pos+1]), int(sys.argv[pos+2])
+                spos, dpos = int(next1), int(next2)
                 base, ext = splitext(new_fn)
                 newlist = base.split()
                 length = len(newlist)
@@ -243,9 +258,8 @@ def main(args):
                 pos = pos + 2  # skip two
 
             elif param in ('-S', '--swap-on'):
-
                 base, ext = splitext(new_fn)
-                front, delim, back = base.partition(sys.argv[pos+1])
+                front, delim, back = base.partition(next1)
                 if delim:  # found
                     # handle/fix spaces if necessary, only singles
                     if front and front[-1].isspace(): # mv space to front
@@ -255,7 +269,7 @@ def main(args):
 
                     new_fn = back + delim + front + ext
                 # else skip
-                pos = pos + 1  # skip one
+                pos += 1  # skip one
             # done with ops
 
             # if param not recognized, it gets skipped, i.e. files
@@ -271,14 +285,14 @@ def main(args):
         already_exists = exists(new_fn)
         nothing_happened = (orig_fn == new_fn)
         if already_exists:
-            mode = _WARN
+            rstat = _WARN
         if nothing_happened:
-            mode = ' '
+            rstat = ' '
         else:
             if args.execute and already_exists:
-                mode = _ERR
+                rstat = _ERR
 
-        print(f'{fmt_display(orig_fn)} {_SEP} {fmt_display(new_fn)}{_SP}{mode}')
+        print(f'{fmt_display(orig_fn)} {_SEP} {fmt_display(new_fn)}{_SP}{rstat}')
 
         if nothing_happened:
             logging.debug('%r is the same, nothing to do.', orig_fn)
