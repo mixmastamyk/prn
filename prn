@@ -17,7 +17,7 @@ from os.path import exists, join, split, splitext
 from console import fg, fx
 
 
-__version__ = '0.82'
+__version__ = '0.83'
 _column_width = 40
 # split that preserves whitespace, https://stackoverflow.com/q/15579271
 _ws_preserving_split = re.compile(r'(\s+)').split
@@ -277,7 +277,7 @@ def main(args):
                 pos += 1  # skip one
             # done with ops
 
-            # if op not recognized, it gets skipped, i.e. files
+            # if op not recognized, just skip, common args and files
             pos += 1
             if op != '-v':
                 logging.debug('new_fn: %s %s', op, new_fn)
@@ -389,12 +389,17 @@ def setup():
     group = parser.add_argument_group('Smart Capitalization')
     group.add_argument('-c', '--capitalize',
         action='store_true',
-        help='Capitalize Each Word, with known acronyms recognized.',
+        help='Capitalize Each Word, recognizing known acronyms.',
     )
-    group.add_argument('--acronyms',
+    group.add_argument('--set-acronyms',
         metavar='FOO,BAR',
         type=lambda param: param.split(','),
         help='Set known acronyms with CSV.',
+    )
+    group.add_argument('--append-acronyms',
+        metavar='FOO,BAR',
+        type=lambda param: param.split(','),
+        help='Append to known acronyms (see below) with CSV.',
     )
 
     group = parser.add_argument_group('File selection/view ops')
@@ -438,9 +443,11 @@ def setup():
 
     # parse and validate
     args = parser.parse_args()
-    if args.acronyms:
+    if args.set_acronyms:
         acronyms.clear()  # operate on reference
-        acronyms.extend(args.acronyms)
+        acronyms.extend(args.set_acronyms)
+    if args.append_acronyms:
+        acronyms.extend(args.append_acronyms)
 
     # start logging
     logging.basicConfig(level=args.loglvl, stream=sys.stdout,
