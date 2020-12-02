@@ -172,26 +172,26 @@ def main(args):
             _dirname, new_fn = split(new_fn)
 
         while pos < len_args:
-            param = sys.argv[pos]
+            op = sys.argv[pos]  # operation
             try:
-                next1 = sys.argv[pos+1]
+                param1 = sys.argv[pos+1]
             except IndexError:
-                next1 = next2 = None
+                param1 = param2 = None
             try:
-                next2 = sys.argv[pos+2]
+                param2 = sys.argv[pos+2]
             except IndexError:
-                next2 = None
+                param2 = None
 
             # whole line ops
-            if param in ('-r', '--replace'):
-                new_fn = new_fn.replace(next1, fmt_index(next2, i))
+            if op in ('-r', '--replace'):
+                new_fn = new_fn.replace(param1, fmt_index(param2, i))
                 pos += 2  # skip two
 
-            elif param in ('-x', '--re-sub'):
-                new_fn = re.sub(next1, fmt_index(next2, i), new_fn)
+            elif op in ('-x', '--re-sub'):
+                new_fn = re.sub(param1, fmt_index(param2, i), new_fn)
                 pos += 2  # skip two
 
-            elif param in ('-z', '--zfill'):
+            elif op in ('-z', '--zfill'):
                 _match = _search_digits(new_fn)
                 if _match:
                     group_text = _match.group(1)
@@ -199,29 +199,29 @@ def main(args):
                     new_fn = _replace_digits(padded_digits, new_fn, count=1)
                 pos += 1  # skip one
 
-            elif param in ('-p', '--prepend'):
-                new_fn = next1 + new_fn
+            elif op in ('-p', '--prepend'):
+                new_fn = param1 + new_fn
                 pos += 1  # skip one
 
-            elif param in ('-a', '--append'):
+            elif op in ('-a', '--append'):
                 base, ext = splitext(new_fn)
-                new_fn = ''.join((base, next1, ext))
+                new_fn = ''.join((base, param1, ext))
                 pos += 1  # skip one
 
-            elif param in ('-A', '--append-ext'):
-                ext = next1
+            elif op in ('-A', '--append-ext'):
+                ext = param1
                 new_fn = new_fn + (ext if ext.startswith('.') else '.' + ext)
                 pos += 1  # skip one
 
-            elif param in ('-i', '--insert'):
-                spos = int(next1)
+            elif op in ('-i', '--insert'):
+                spos = int(param1)
                 newlist = list(new_fn)
 
-                newlist.insert(spos, next2)
+                newlist.insert(spos, param2)
                 new_fn = ''.join(newlist)
                 pos += 2  # skip two
 
-            elif param in ('-c', '--capitalize'):
+            elif op in ('-c', '--capitalize'):
                 # this is tricky, avoid capping ext w/o breaking names w/ dates
                 # needs test cases
                 try:
@@ -233,19 +233,19 @@ def main(args):
                 except IndexError:
                     pass
 
-            elif param in ('-l', '--lower'):
+            elif op in ('-l', '--lower'):
                 new_fn = new_fn.lower()
-            elif param in ('-L', '--lower-ext'):
+            elif op in ('-L', '--lower-ext'):
                 base, ext = splitext(new_fn)
                 new_fn = base + ext.lower()
-            elif param in ('-u', '--upper'):
+            elif op in ('-u', '--upper'):
                 new_fn = new_fn.upper()
-            elif param in ('-s', '--strip'):
+            elif op in ('-s', '--strip'):
                 base, ext = splitext(new_fn)
                 new_fn = base.strip() + ext.replace(' ', '')
 
-            elif param in ('-o', '--reorder'):
-                spos, dpos = int(next1), int(next2)
+            elif op in ('-o', '--reorder'):
+                spos, dpos = int(param1), int(param2)
                 base, ext = splitext(new_fn)
                 newlist = base.split()
                 length = len(newlist)
@@ -260,9 +260,9 @@ def main(args):
                 new_fn = ' '.join(newlist) + ext
                 pos = pos + 2  # skip two
 
-            elif param in ('-S', '--swap-on'):
+            elif op in ('-S', '--swap-on'):
                 base, ext = splitext(new_fn)
-                front, delim, back = base.partition(next1)
+                front, delim, back = base.partition(param1)
                 if delim:  # found
                     # handle/fix spaces if necessary, only singles
                     if front and front[-1].isspace(): # mv space to front
@@ -275,10 +275,10 @@ def main(args):
                 pos += 1  # skip one
             # done with ops
 
-            # if param not recognized, it gets skipped, i.e. files
+            # if op not recognized, it gets skipped, i.e. files
             pos += 1
-            if param != '-v':
-                logging.debug('new_fn: %s %s', param, new_fn)
+            if op != '-v':
+                logging.debug('new_fn: %s %s', op, new_fn)
 
         if args.recursive:  # now add folder back
             new_fn = join(_dirname, new_fn)
