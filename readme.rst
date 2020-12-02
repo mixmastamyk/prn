@@ -11,18 +11,17 @@ Background
 -----------------------
 
 In short,
-this tool does string operations on filenames in the order that
-they occur on the command-line.
+this tool operates on filenames in the order that they occur on the
+command-line.
 Why?
 So that results are consistent with expectations.
-
 Therefore,
 if the given modifications interact in unfortunate ways,
 they may be reordered to suit.
 This was a design goal.
 
 The final rename happens at once however.
-No need to worry about files renamed half-way.
+No need to worry about renames occurring half-way.
 
 Consequently, when performing many operations on an
 *absolutley huge* number of files,
@@ -97,7 +96,7 @@ There are several ways to select files for renaming.
 
   .. code-block:: shell
 
-        ⏵ prn … foo.bar *.mp3
+        ⏵ prn foo.txt *.mp3
 
 - In a folder with huge numbers of files,
   command-line limits may be bypassed with ``--match 'GLOB'`` as shown below:
@@ -111,8 +110,8 @@ There are several ways to select files for renaming.
 
     ⏵ prn --filter 'Rick Astley*'  # Never gonna…
 
-  Match and filter may be passed multiple times to add to or subtract from the
-  selected file set.
+  Match and filter may be passed multiple times to sculpt the selected file
+  set.
 
 *"You may dispense with the pleasantries Commander…"*
 
@@ -153,7 +152,7 @@ Common String Operations
 
 Numerous helpful string operations are also available:
 
-- ``-c --capitalize`` → *A "smart cap" of words*
+- ``-c --capitalize`` → *"Smart cap" each word*
 - ``-l --lower --lower-ext``
 - ``-u --upper``
 - ``-s --strip``
@@ -201,8 +200,8 @@ substituting a GUID (of hex digits) with a zero padded index number:
 
     ⏵ prn --prepend img_ -x '[A-F\d-]+' '%02i' -r .jpeg .jpg
 
-    DEADBEEF-CAFE-123456.jpeg           │ img_00.jpg                                                      ✓
-    DEADBEEF-CAFE-654321.jpeg           │ img_01.jpg                                                      ✓
+    DEADBEEF-CAFE-123456.jpeg           │ img_00.jpg
+    DEADBEEF-CAFE-654321.jpeg           │ img_01.jpg
 
 Without the formatted index number, these filenames would collide.
 A prefix is also added as well as a minor extension tweak.
@@ -239,13 +238,13 @@ may be problematic if there are digits before the desired group:
 
 
 Doh, one way to get around this (that can help in several other situations) is
-to hide the problem section by replacing it,
-then later returning it to its original form:
+to hide the problem section while operating on other parts of the name.
+Below for example,
+we substitute base with ``"@"``, pad with zeros, then return original basename:
 
 .. code-block:: shell
 
-    # replace, pad, then return
-    ⏵ prn -r foo1 @  -z 4  -r @ foo1  *.tif
+    ⏵ prn  -r foo1 @  -z 4  -r @ foo1  *.tif
 
     foo1.3.tif                          │ foo1.0003.tif
     foo1.4.tif                          │ foo1.0004.tif
@@ -253,7 +252,8 @@ then later returning it to its original form:
 This works since operation arguments are processed in order from left to right.
 Use a character for substitution that is not being used in the filenames,
 of course.
-Here we used the "``@``" symbol.
+Here we used the at symbol,
+but it could be any unique string.
 
 
 See ``-h`` for further details.
@@ -281,7 +281,7 @@ Finalize them with ``-e`` or ``--execute`` like so:
 
 .. code-block:: shell
 
-    ⏵ prn …  -e
+    ⏵ prn … … …  -e
 
 
 *Whoomp!  There it is.*
@@ -300,7 +300,8 @@ and will notify you beforehand when they do.
 
 Despite its version number it has been used for (pushing two) decades now.
 However, as mentioned it was ported recently to Python3.
-There is a test suite but it is not currently large.
+There is a test suite but it is not currently extensive.
 Therefore:
 
 *☛  Make a backup before trusting prn with large or important file collections. ☚*
+|

@@ -17,7 +17,7 @@ from os.path import exists, join, split, splitext
 from console import fg, fx
 
 
-__version__ = '0.83'
+__version__ = '0.84'
 _column_width = 40
 # split that preserves whitespace, https://stackoverflow.com/q/15579271
 _ws_preserving_split = re.compile(r'(\s+)').split
