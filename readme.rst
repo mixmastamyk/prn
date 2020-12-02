@@ -183,7 +183,7 @@ use a regex instead:
 I find `regex101.com <https://regex101.com/>`_
 very helpful when writing them.
 
-Now you've got two problems, *wink.*
+Now you've got two problems, *wink.* 😉
 
 
 Adding an Index Number
