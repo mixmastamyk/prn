@@ -17,7 +17,7 @@ from os.path import exists, join, split, splitext
 from console import fg, fx
 
 
-__version__ = '0.82a1'
+__version__ = '0.82a2'
 _column_width = 40
 # split that preserves whitespace, https://stackoverflow.com/q/15579271
 _ws_preserving_split = re.compile(r'(\s+)').split
@@ -30,13 +30,6 @@ _WARN = str(fg.yellow + fx.bold + '⚠' + fx.end)
 _ERR = str(fg.red + fx.bold + '✗' + fx.end)
 _SP = ''
 _HEADER = '\nMike-rosoft™ Power Rename%s:\n'
-_EPILOG = '''Example:
-
-    prn -R --match '*.mp3' --replace _ ' ' --prepend 'Disc 1 - '
-
-Each text operation will be performed in the order it is listed. Try a few
-options, refine as necessary, then use -e/--execute to commit the changes.
-'''
 acronyms = [
     'AB', 'ABBA', 'ABC', 'ACDC', 'ATB', 'BIG', 'BBC', 'BPM', 'CCCP', 'DJ',
     "DJ's", 'DJs', 'DMC', 'EFX', 'EMF', 'INXS', 'KC', 'KLF', 'KWS', 'LL',
@@ -44,6 +37,15 @@ acronyms = [
     'TLC', 'UB40', 'US3', 'USA', 'USSR', 'VIP', 'XTC', 'YMCA', 'ZZ',
     'LICENSE', 'README',
 ]
+_EPILOG = '''Example:
+
+    prn -R --match '*.mp3' --replace _ ' ' --prepend 'Disc 1 - '
+
+Each text operation will be performed in the order it is listed. Try a few
+options, refine as necessary, then use -e/--execute to commit the changes.
+
+Recognized acronyms for Smart Capitalization:
+''' + str(acronyms)
 
 
 def filtered_files_generator(filter_arg, files_iterator):
@@ -90,13 +92,13 @@ def smartcap(text):
         up = word.upper()
         if up in acronyms:
             result.append(up)
-        elif word in acronyms:  # not very efficient
+        elif word in acronyms:      # not very efficient
             result.append(word)
-        else:
+        else:                       # cap it
             up = word.title()
-            if up.endswith("'S"):  # Avoid capping possessives to 'S
+            if up.endswith("'S"):   # Avoid capping possessives to 'S
                 up = up[:-1] + 's'
-            elif up.endswith("'T"): # can't don't
+            elif up.endswith("'T"): # can't don't  :-/
                 up = up[:-1] + 't'
             result.append(up)
 
@@ -333,102 +335,112 @@ def setup():
                     RawTextHelpFormatter(prog, max_help_position=29)
              )
 
-    sgroup = parser.add_argument_group('Simple string ops')
-    sgroup.add_argument('-c', '--capitalize',
-        action='store_true',
-        help='Smart Capitalize Each Word, incl. known acronyms.',
-    )
-    sgroup.add_argument('-l', '--lower',
+    group = parser.add_argument_group('Simple string operations')
+    group.add_argument('-l', '--lower',
         action='store_true', help='To lower case.'
     )
-    sgroup.add_argument('-L', '--lower-ext',
+    group.add_argument('-L', '--lower-ext',
         action='store_true',
         help='Lower extension only, e.g.: Foo.JPG → Foo.jpg.'
     )
-    sgroup.add_argument('-u', '--upper',
+    group.add_argument('-u', '--upper',
         action='store_true', help='To UPPER case.'
     )
-    sgroup.add_argument('-s', '--strip',
+    group.add_argument('-s', '--strip',
         action='store_true', help='Remove whitespace from ends.'
     )
 
-    mgroup = parser.add_argument_group('String manipulation')
-    mgroup.add_argument('-r', '--replace',
+    group = parser.add_argument_group('Advanced string manipulation')
+    group.add_argument('-r', '--replace',
         metavar=('S', 'N'), nargs=2,
         help='Replace a string with a new one.'
     )
-    mgroup.add_argument('-x', '--re-sub',
+    group.add_argument('-x', '--re-sub',
         metavar=('R', 'N'), nargs=2,
         help='Replace regular eXpression match w/ new string.'
     )
-    mgroup.add_argument('-p', '--prepend',
+    group.add_argument('-p', '--prepend',
         metavar='S', help='Insert a string before filename.'
     )
-    mgroup.add_argument('-a', '--append',
+    group.add_argument('-a', '--append',
         metavar='S', help='Append a string after *base* of filename.'
     )
-    mgroup.add_argument('-A', '--append-ext',
+    group.add_argument('-A', '--append-ext',
         metavar='S', help='Append a string to end or extension of filename.'
     )
-    mgroup.add_argument('-i', '--insert',
+    group.add_argument('-i', '--insert',
         metavar=('P', 'S'), nargs=2,
         help='Insert a string at the given position (neg ok).'
     )
-    mgroup.add_argument('-o', '--reorder',
+    group.add_argument('-o', '--reorder',
         metavar=('SP', 'DP'), nargs=2, type=int,
         help='Re-arrange word tokens in filename, given source-\n'
         'position and dest-position (neg index ok).'
     )
-    mgroup.add_argument('-S', '--swap-on',
-        metavar='C', nargs=1,
+    group.add_argument('-S', '--swap-on',
+        metavar='STR', nargs=1,
         help='Swap two parts of base filename, split on a given\n'
-        'delimiter character, e.g. "-".'
+        'delimiter, e.g. "-".'
     )
-    mgroup.add_argument('-z', '--zfill',
+    group.add_argument('-z', '--zfill',
         metavar='N', help='Left-pad first group of digits with N zeros.'
     )
 
-    fgroup = parser.add_argument_group('File selection/view ops')
-    fgroup.add_argument('-m', '--match',
+    group = parser.add_argument_group('Smart Capitalization')
+    group.add_argument('-c', '--capitalize',
+        action='store_true',
+        help='Capitalize Each Word, with known acronyms recognized.',
+    )
+    group.add_argument('--acronyms',
+        metavar='FOO,BAR',
+        type=lambda param: param.split(','),
+        help='Set known acronyms with CSV.',
+    )
+
+    group = parser.add_argument_group('File selection/view ops')
+    group.add_argument('-m', '--match',
         action='append', default=[], metavar='"G"',
         help='Select files with glob support, multiple allowed.\n'
              'Use when files exceed command-line length.'
     )
-    fgroup.add_argument('-f', '--filter',
+    group.add_argument('-f', '--filter',
         action='append', default=[], metavar='"G"',
         help='Exclude these files from selection, (+glob, mult).'
     )
-    fgroup.add_argument('-R', '--recursive',
+    group.add_argument('-R', '--recursive',
         action='store_true', help='Select files in subfolders too.'
     )
-    fgroup.add_argument('--align-right', action='store_true',
+    group.add_argument('--align-right', action='store_true',
         help='Useful when end of filename is not visible,\n'
              'shifts it left.'
     )
-    fgroup.add_argument('-e', '--execute',
+    group.add_argument('-e', '--execute',
         action='store_true',
         help='! Execute rename operations, defaults to preview.'
     )
-    fgroup.add_argument('files',
+    group.add_argument('files',
         metavar='filename', nargs='*',
         help='List of files, leave blank to search current dir.'
     )
 
-    cgroup = parser.add_argument_group('Common options')
-    cgroup.add_argument('-h', '--help',
+    group = parser.add_argument_group('Common options')
+    group.add_argument('-h', '--help',
         action='help', help='Show this help message and exit.'
     )
-    cgroup.add_argument('-v', '--verbose',
+    group.add_argument('-v', '--verbose',
         action='store_const', dest='loglvl',
         default=logging.INFO, const=logging.DEBUG,
         help='Emit additional debug log messages.',
     )
-    cgroup.add_argument('--version',
+    group.add_argument('--version',
         action='version', version='%(prog)s ' + __version__,
     )
 
     # parse and validate
     args = parser.parse_args()
+    if args.acronyms:
+        acronyms.clear()  # operate on reference
+        acronyms.extend(args.acronyms)
 
     # start logging
     logging.basicConfig(level=args.loglvl, stream=sys.stdout,
