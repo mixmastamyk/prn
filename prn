@@ -175,9 +175,12 @@ def main(args):
             param = sys.argv[pos]
             try:
                 next1 = sys.argv[pos+1]
+            except IndexError:
+                next1 = next2 = None
+            try:
                 next2 = sys.argv[pos+2]
-            except IndexError:  # argparse generally won't allow this
-                next1 = next2 = None  # belt and suspenders
+            except IndexError:
+                next2 = None
 
             # whole line ops
             if param in ('-r', '--replace'):

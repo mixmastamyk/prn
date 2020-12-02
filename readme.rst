@@ -1,6 +1,6 @@
 
-Mike-rosoft Power File Renamer (c) 2003-2020
-==============================================
+Mike-rosoft™ Power File Renamer (c) 2003-2020
+===============================================
 
 A tool to rename large numbers of files, such as MP3s or images.
 Recently ported to Python 3.6+ from ancient untouched 2.0-era source complete
@@ -11,19 +11,20 @@ Background
 -----------------------
 
 In short,
-this tool does string updates on filenames in the order that
+this tool does string operations on filenames in the order that
 they occur on the command-line.
+Why?
+So that results are consistent with expectations.
 
-It is done this way so that results are consistent with expectations.
 Therefore,
 if the given modifications interact in unfortunate ways,
 they may be reordered to suit.
 This was a design goal.
 
 The final rename happens at once however.
-No need to worry about files renamed half-way then.
+No need to worry about files renamed half-way.
 
-Consequently, when performing many operations on a
+Consequently, when performing many operations on an
 *absolutley huge* number of files,
 it might be less than instantaneous,
 due to the inefficiencies of looping through the argument list for each file.
@@ -42,7 +43,7 @@ physician:
     consultation, diagnosis, and/or medical treatment of a qualified physician
     or healthcare provider.*
 
-    *"Do not taunt P.R.N.  Accept no substitutes!"*
+    *"Do not taunt P.R.N.—Accept no substitutes!"*
 
 
 Installen-Sie, Bitte
@@ -152,7 +153,7 @@ Common String Operations
 
 Numerous helpful string operations are also available:
 
-- ``-c --capitalize``  A "smart cap" of words
+- ``-c --capitalize`` → *A "smart cap" of words*
 - ``-l --lower --lower-ext``
 - ``-u --upper``
 - ``-s --strip``
@@ -164,8 +165,8 @@ Simple Replace
 
 We've already seen how ``--replace old new`` or its short form ``-r old new``
 works above.
-It'll likely be your most used operation,
-the workhorse.
+It'll likely be the most used,
+workhorse operation.
 
 
 Regular Expression Substitutions
@@ -179,27 +180,31 @@ use a regex instead:
     # collapse consecutive whitespace to a single space
     ⏵ prn --re-sub '\s+' ' '
 
-``-x …`` works too.
+``-x …`` works as well.
+I find `regex101.com <https://regex101.com/>`_
+very helpful when writing them.
 
 Now you've got two problems, *wink.*
 
 
 Adding an Index Number
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Several of the operations,
 such as replacement, insert, append, and prepend support an index number,
 assigned in the order of the file selection list.
+This helps when destination filenames will not be unique.
 Below we do a regex replace,
 substituting a GUID (of hex digits) with a zero padded index number:
 
 .. code-block:: shell
 
-    ⏵ prn -p img_ -x '[A-F\d-]+' '%02i' -r .jpeg .jpg
+    ⏵ prn --prepend img_ -x '[A-F\d-]+' '%02i' -r .jpeg .jpg
 
     DEADBEEF-CAFE-123456.jpeg           │ img_00.jpg                                                      ✓
     DEADBEEF-CAFE-654321.jpeg           │ img_01.jpg                                                      ✓
 
+Without the formatted index number, these filenames would collide.
 A prefix is also added as well as a minor extension tweak.
 
 
@@ -289,12 +294,13 @@ Safety
 
 It won't make changes until you are happy with the results and pass the execute
 flag.
-It won't rename files to destinations that already exist,
+It won't even try to rename files to destinations that already exist
+(or clobber them either),
 and will notify you beforehand when they do.
-Despite its version number it has been used for (pushing two) decades now.
 
+Despite its version number it has been used for (pushing two) decades now.
 However, as mentioned it was ported recently to Python3.
 There is a test suite but it is not currently large.
 Therefore:
 
-*☛  Make a backup before trusting with large or important file collections. ☚*
+*☛  Make a backup before trusting prn with large or important file collections. ☚*
