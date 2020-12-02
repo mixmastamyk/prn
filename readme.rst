@@ -273,6 +273,19 @@ editing.
 Press Enter to see the results.
 
 
+Can't See Enough?
+~~~~~~~~~~~~~~~~~~~
+
+``prn`` shows each source and destination filename one per line,
+taking as much width as it can find on your terminal.
+Maximize the window if possible and/or shrink the font size to see more at
+once.
+
+If the ends of filenames are still cut off,
+``--align-right``
+will it scroll them to the left.
+
+
 Now, Commit Changes
 ---------------------
 

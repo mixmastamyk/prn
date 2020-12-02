@@ -18,7 +18,7 @@ from console import fg, fx
 
 
 __version__ = '0.84'
-_column_width = 40
+_column_width = 40  # default
 # split that preserves whitespace, https://stackoverflow.com/q/15579271
 _ws_preserving_split = re.compile(r'(\s+)').split
 _search_digits = re.compile(r'(\d+)').search
@@ -463,7 +463,7 @@ if __name__ == '__main__':
 
     cols = get_terminal_size((80, 20)).columns
     padding = 2  # minus column padding, border, ico
-    _column_width = int(cols / 2) - padding
+    _column_width = int(cols / 2) - padding  # floor
     if cols % 2:  # is odd
         _SP = ' '
 
