@@ -70,7 +70,7 @@ def fmt_display(text):
     elif text_len < _column_width:
         text = text.ljust(_column_width, ' ')
 
-    return text  # else equal
+    return text  # else equal
 
 
 def fmt_index(text, i):
@@ -112,6 +112,7 @@ def select_files(args):
 
     elif args.match:  # glob passed
         from glob import iglob  # defer loading
+
         files_sources = []
         for match_arg in args.match:
             if args.recursive:  # alleviate need to add **/ every time for glob
@@ -134,8 +135,7 @@ def select_files(args):
         match_arg = '*'
         if args.recursive:  # alleviate need to add **/ every time for glob
             new_arg = '**' + os.sep + match_arg
-            logging.debug('recursive match %r updated to: %r',
-                          match_arg, new_arg)
+            logging.debug('recursive match %r updated to: %r', match_arg, new_arg)
             match_arg = new_arg
         files = iglob(match_arg, recursive=args.recursive)
 
@@ -224,10 +224,10 @@ def main(args):
                 pos += 2  # skip two
 
             elif op in ('-c', '--capitalize'):
-                # this is tricky, avoid capping ext w/o breaking names w/ dates
+                # this is tricky, avoid capping ext w/o breaking names w/ dates
                 # needs test cases
                 try:
-                    if new_fn[-4]  == '.' or new_fn[-5] == '.':
+                    if new_fn[-4] == '.' or new_fn[-5] == '.':
                         base, ext = splitext(new_fn)
                         new_fn = smartcap(base) + ext
                     else:
@@ -267,9 +267,9 @@ def main(args):
                 front, delim, back = base.partition(param1)
                 if delim:  # found
                     # handle/fix spaces if necessary, only singles
-                    if front and front[-1].isspace(): # mv space to front
+                    if front and front[-1].isspace():  # mv space to front
                         front = front[-1] + front[:-1]
-                    if back and back[0].isspace():    # mv space to back
+                    if back and back[0].isspace():  # mv space to back
                         back = back[1:] + back[0]
 
                     new_fn = back + delim + front + ext
@@ -327,6 +327,7 @@ def main(args):
 def setup():
     ''' Parse, validate command-line, start logging. '''
     from argparse import ArgumentParser, RawTextHelpFormatter
+
     parser = ArgumentParser(
                 add_help=False,
                 description=__doc__,
@@ -450,8 +451,9 @@ def setup():
         acronyms.extend(args.append_acronyms)
 
     # start logging
-    logging.basicConfig(level=args.loglvl, stream=sys.stdout,
-                        format='  %(levelname)-8.8s %(message)s')
+    logging.basicConfig(
+        level=args.loglvl, stream=sys.stdout, format='  %(levelname)-8.8s %(message)s'
+    )
     logging.debug('args: %s', args)
 
     return args
