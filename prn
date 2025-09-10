@@ -17,7 +17,7 @@ from os.path import exists, join, split, splitext
 from console import fg, fx
 
 
-__version__ = '0.84'
+__version__ = '0.85a1'
 _column_width = 40  # default
 # split that preserves whitespace, https://stackoverflow.com/q/15579271
 _ws_preserving_split = re.compile(r'(\s+)').split
@@ -190,8 +190,15 @@ def main(args):
                 pos += 2  # skip two
 
             elif op in ('-x', '--re-sub'):
-                new_fn = re.sub(param1, fmt_index(param2, i), new_fn)
-                pos += 2  # skip two
+                try:
+                    new_fn = re.sub(param1, fmt_index(param2, i), new_fn)
+                    pos += 2  # skip two
+                except re.PatternError as err:
+                    print(
+                        f'Error: {err.__class__.__name__}: {err}',
+                        file=sys.stderr,
+                    )
+                    return os.EX_USAGE
 
             elif op in ('-z', '--zfill'):
                 _match = _search_digits(new_fn)
@@ -473,7 +480,8 @@ if __name__ == '__main__':
         args = setup()
         sys.exit(main(args))
     except Exception as err:
-        if args.verbose:
-            raise
-        print('Error:', err)
+        if args.loglvl == logging.DEBUG:
+            logging.exception('Unexpected:')
+        else:
+            print('Error:', err, file=sys.stderr)
         sys.exit(os.EX_DATAERR)
