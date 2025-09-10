@@ -12,8 +12,9 @@ proj_name = 'prn'
 
 # https://www.python.org/dev/peps/pep-0508/#environment-markers
 install_requires = (
-    'colorama;            os_name == "nt" and platform_version < "10.0.10586" ',
-    'win_unicode_console; os_name == "nt" and python_version < "3.6" ',
+    # pip broke this, windows users on their own.  ;-/
+    #~ 'colorama;            os_name == "nt" and platform_version < "10.0.10586" ',
+    #~ 'win_unicode_console; os_name == "nt" and python_version < "3.6" ',
 )
 tests_require = ('pyflakes', 'readme_renderer'),
 extras_require = dict(
