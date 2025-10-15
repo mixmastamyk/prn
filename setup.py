@@ -10,9 +10,8 @@ if sys.version_info.major < 3:
 keywords = ('file files rename renamer')
 proj_name = 'prn'
 
-# https://www.python.org/dev/peps/pep-0508/#environment-markers
 install_requires = (
-    # pip broke this, windows users on their own.  ;-/
+    # Below broken by pip, Win 10 EOL
     #~ 'colorama;            os_name == "nt" and platform_version < "10.0.10586" ',
     #~ 'win_unicode_console; os_name == "nt" and python_version < "3.6" ',
 )
