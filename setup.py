@@ -11,6 +11,7 @@ keywords = ('file files rename renamer')
 proj_name = 'prn'
 
 install_requires = (
+    'console>=0.9912',
     # Below broken by pip, Win 10 EOL
     #~ 'colorama;            os_name == "nt" and platform_version < "10.0.10586" ',
     #~ 'win_unicode_console; os_name == "nt" and python_version < "3.6" ',
