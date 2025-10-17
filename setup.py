@@ -48,7 +48,7 @@ setup(
     author_email        = 'mixmastamyk@github.com',
     author              = 'Mike Miller',
     keywords            = keywords,
-    license             = 'LGPL 3',
+    license             = 'GPL-3.0-or-later',
     long_description    = slurp('readme.rst'),
     url                 = 'https://github.com/mixmastamyk/prename',
     version             = get_version(proj_name),
