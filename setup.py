@@ -50,6 +50,7 @@ setup(
     keywords            = keywords,
     license             = 'GPL-3.0-or-later',
     long_description    = slurp('readme.rst'),
+    long_description_content_type = 'text/x-rst',
     url                 = 'https://github.com/mixmastamyk/prename',
     version             = get_version(proj_name),
 
